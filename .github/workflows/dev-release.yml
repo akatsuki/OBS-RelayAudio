@@ -1,0 +1,63 @@
+name: dev-release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-publish:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache OBS build inputs
+        uses: actions/cache@v4
+        with:
+          path: build/cache/obs-plugin
+          key: obs-cache-${{ runner.os }}-${{ hashFiles('scripts/build-obs-plugin.ps1', 'package.json') }}
+          restore-keys: |
+            obs-cache-${{ runner.os }}-
+
+      - name: Install OBS Studio
+        shell: pwsh
+        run: >
+          winget install --id OBSProject.OBSStudio -e
+          --silent --accept-package-agreements --accept-source-agreements
+          --disable-interactivity
+
+      - name: Build plugin
+        shell: pwsh
+        run: npm run build:obs-plugin
+
+      - name: Package dev release zip
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+          Compress-Archive `
+            -Path dist/obs-plugin/browser-relay-audio/obs-plugins/64bit/browser-relay-audio.dll `
+            -DestinationPath release/OBS-RelayAudio-dev-release-windows.zip `
+            -Force
+
+      - name: Publish dev release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: dev-release
+          target_commitish: ${{ github.sha }}
+          name: dev-release
+          prerelease: true
+          make_latest: false
+          files: |
+            release/OBS-RelayAudio-dev-release-windows.zip
+            dist/obs-plugin/browser-relay-audio/obs-plugins/64bit/browser-relay-audio.dll
+          generate_release_notes: true

@@ -23,6 +23,7 @@ audio into OBS.
 ## Automation
 
 - Pushes to `main` build the Windows plugin and upload the staged DLL as a GitHub Actions artifact.
+- Pushes to `main` also publish a `dev-release` prerelease with the latest beta build assets.
 - Tag pushes that match `v*` build the plugin, package the DLL, and publish the zip plus DLL as GitHub Release assets.
 
 ## Build
