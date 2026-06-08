@@ -13,6 +13,18 @@ audio into OBS.
 - Localhost PCM bridge protocol with a configurable port.
 - Build-time staging of the plugin DLL for packaging into the app.
 
+## Roadmap
+
+- macOS plugin build and packaging.
+- Linux plugin build and packaging.
+- Cross-platform install and uninstall flow for the packaged plugin.
+- Keep the bridge protocol and source naming aligned across all supported platforms.
+
+## Automation
+
+- Pushes to `main` build the Windows plugin and upload the staged DLL as a GitHub Actions artifact.
+- Tag pushes that match `v*` build the plugin, package the DLL, and publish the zip plus DLL as GitHub Release assets.
+
 ## Build
 
 Run:

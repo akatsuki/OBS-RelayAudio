@@ -10,9 +10,6 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = (Resolve-Path "$PSScriptRoot\..").Path
 $pluginSourceDir = Join-Path $repoRoot "obs-plugin\browser-relay-audio"
-$cmakeExe = "C:\Program Files\CMake\bin\cmake.exe"
-$vsLibExe = "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\lib.exe"
-$vsDumpbinExe = "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\dumpbin.exe"
 $sourceZip = Join-Path $CacheDir "OBS-Studio-$ObsVersion.zip"
 $sourceDir = Join-Path $CacheDir "obs-studio-$ObsVersion"
 $generatedIncludeDir = Join-Path $CacheDir "generated-include"
@@ -20,6 +17,55 @@ $generatedObsConfigDir = Join-Path $generatedIncludeDir "libobs"
 $obsLibDir = Join-Path $CacheDir "obs-runtime"
 $obsImportLib = Join-Path $obsLibDir "obs.lib"
 $obsDef = Join-Path $obsLibDir "obs.def"
+
+function Resolve-CMakeExe {
+  $cmd = Get-Command cmake.exe -ErrorAction SilentlyContinue
+  if ($cmd) {
+    return $cmd.Source
+  }
+
+  $candidate = "C:\Program Files\CMake\bin\cmake.exe"
+  if (Test-Path -LiteralPath $candidate) {
+    return $candidate
+  }
+
+  throw "CMake not found on PATH or at $candidate"
+}
+
+function Resolve-VsToolPaths {
+  $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+  $toolNames = @("lib.exe", "dumpbin.exe")
+  $resolved = @{}
+
+  if (Test-Path -LiteralPath $vswhere) {
+    foreach ($toolName in $toolNames) {
+      $matches = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -find "VC\Tools\MSVC\**\bin\Hostx64\x64\$toolName"
+      if ($matches) {
+        $resolved[$toolName] = $matches | Select-Object -First 1
+      }
+    }
+  }
+
+  foreach ($toolName in $toolNames) {
+    if (-not $resolved.ContainsKey($toolName)) {
+      $fallback = "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\$toolName"
+      if (Test-Path -LiteralPath $fallback) {
+        $resolved[$toolName] = $fallback
+      }
+    }
+  }
+
+  if (-not $resolved.ContainsKey("lib.exe") -or -not $resolved.ContainsKey("dumpbin.exe")) {
+    throw "MSVC tooling not found. Install Visual Studio Build Tools with the C++ toolset."
+  }
+
+  return $resolved
+}
+
+$cmakeExe = Resolve-CMakeExe
+$vsTools = Resolve-VsToolPaths
+$vsLibExe = $vsTools["lib.exe"]
+$vsDumpbinExe = $vsTools["dumpbin.exe"]
 
 function Write-TextIfChanged {
   param(

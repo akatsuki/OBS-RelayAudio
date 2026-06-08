@@ -15,6 +15,12 @@ Current status:
 - Browser audio capture and packet emission from Electron still need to be
   attached to the app-side bridge.
 
+Roadmap:
+
+- macOS support for the plugin build and install flow.
+- Linux support for the plugin build and install flow.
+- Shared protocol behavior across Windows, macOS, and Linux builds.
+
 ## Build
 
 The build flow downloads the OBS Studio source archive, generates the minimal
