@@ -1,0 +1,52 @@
+name: build
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache OBS build inputs
+        uses: actions/cache@v4
+        with:
+          path: build/cache/obs-plugin
+          key: obs-cache-${{ runner.os }}-${{ hashFiles('scripts/build-obs-plugin.ps1', 'package.json') }}
+          restore-keys: |
+            obs-cache-${{ runner.os }}-
+
+      - name: Install OBS Studio
+        shell: pwsh
+        run: >
+          winget install --id OBSProject.OBSStudio -e
+          --silent --accept-package-agreements --accept-source-agreements
+          --disable-interactivity
+
+      - name: Build plugin
+        shell: pwsh
+        run: npm run build:obs-plugin
+
+      - name: Build installer
+        shell: pwsh
+        run: npm run build:installer
+
+      - name: Upload staged DLL
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-relay-audio-dll-${{ github.sha }}
+          path: dist/obs-plugin/browser-relay-audio/obs-plugins/64bit/browser-relay-audio.dll
+          if-no-files-found: error

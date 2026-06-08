@@ -2,7 +2,13 @@ param(
   [Parameter(Mandatory = $true)]
   [string]$PluginDllPath,
 
-  [string]$ObsRoot
+  [string]$ObsRoot,
+
+  [string]$PluginName = "browser-relay-audio",
+
+  [string]$UninstallScriptPath,
+
+  [string]$PluginDataSource
 )
 
 $ErrorActionPreference = "Stop"
@@ -36,12 +42,34 @@ if (-not (Test-Path -LiteralPath $PluginDllPath)) {
 
 $resolvedDll = (Resolve-Path -LiteralPath $PluginDllPath).Path
 $resolvedObsRoot = Resolve-ObsRoot -RequestedRoot $ObsRoot
+$scriptDir = Split-Path -Parent $PSCommandPath
+$resolvedPluginDataSource = if ($PluginDataSource) { $PluginDataSource } else { Join-Path $scriptDir "data\obs-plugins\$PluginName" }
 
 $pluginBinDir = Join-Path $resolvedObsRoot "obs-plugins\64bit"
+$pluginDataDir = Join-Path $resolvedObsRoot "data\obs-plugins\$PluginName"
 $destinationDll = Join-Path $pluginBinDir (Split-Path -Leaf $resolvedDll)
 
 New-Item -ItemType Directory -Force -Path $pluginBinDir | Out-Null
+New-Item -ItemType Directory -Force -Path $pluginDataDir | Out-Null
 
 Copy-Item -LiteralPath $resolvedDll -Destination $destinationDll -Force
+
+if ($resolvedPluginDataSource -and (Test-Path -LiteralPath $resolvedPluginDataSource)) {
+  Get-ChildItem -LiteralPath $resolvedPluginDataSource -Force | Copy-Item -Destination $pluginDataDir -Recurse -Force
+} else {
+  $localeDir = Join-Path $pluginDataDir "locale"
+  $stageLocales = Get-ChildItem -LiteralPath $scriptDir -Filter "*.ini" -File -ErrorAction SilentlyContinue
+  if ($stageLocales) {
+    New-Item -ItemType Directory -Force -Path $localeDir | Out-Null
+    foreach ($localeFile in $stageLocales) {
+      Copy-Item -LiteralPath $localeFile.FullName -Destination (Join-Path $localeDir $localeFile.Name) -Force
+    }
+  }
+}
+
+if ($UninstallScriptPath) {
+  $resolvedUninstallScript = (Resolve-Path -LiteralPath $UninstallScriptPath).Path
+  Copy-Item -LiteralPath $resolvedUninstallScript -Destination (Join-Path $pluginDataDir "uninstall.ps1") -Force
+}
 
 Write-Host "Installed OBS plugin DLL to $destinationDll"
