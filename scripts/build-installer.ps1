@@ -100,6 +100,29 @@ function Get-RelativeStagePath {
   return Split-Path -Leaf $resolvedFull
 }
 
+function Copy-WithRetry {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$Source,
+    [Parameter(Mandatory = $true)]
+    [string]$Destination,
+    [int]$Attempts = 20
+  )
+
+  for ($i = 0; $i -lt $Attempts; $i++) {
+    try {
+      Copy-Item -LiteralPath $Source -Destination $Destination -Force
+      return
+    } catch {
+      if ($i -eq ($Attempts - 1)) {
+        throw
+      }
+
+      Start-Sleep -Milliseconds 250
+    }
+  }
+}
+
 if (-not (Test-Path -LiteralPath $sourceDll)) {
   throw "Built plugin DLL not found at $sourceDll"
 }
@@ -146,6 +169,6 @@ if (-not (Test-Path -LiteralPath $tempOutputPath)) {
   throw "IExpress failed with exit code $LASTEXITCODE"
 }
 
-Copy-Item -LiteralPath $tempOutputPath -Destination $outputPath -Force
+Copy-WithRetry -Source $tempOutputPath -Destination $outputPath
 
 Write-Host "Installer created at: $outputPath"
