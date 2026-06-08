@@ -48,6 +48,9 @@ function Invoke-Install {
 
   if (Test-Path -LiteralPath $PluginDataSource) {
     Get-ChildItem -LiteralPath $PluginDataSource -Force | Copy-Item -Destination $pluginDataDir -Recurse -Force
+  } elseif (Test-Path -LiteralPath (Join-Path $scriptDir "en-US.ini")) {
+    New-Item -ItemType Directory -Force -Path (Join-Path $pluginDataDir "locale") | Out-Null
+    Copy-Item -LiteralPath (Join-Path $scriptDir "en-US.ini") -Destination (Join-Path $pluginDataDir "locale\en-US.ini") -Force
   }
 
   [System.Windows.Forms.MessageBox]::Show(
