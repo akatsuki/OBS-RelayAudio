@@ -40,14 +40,12 @@ jobs:
         shell: pwsh
         run: npm run build:obs-plugin
 
-      - name: Package release zip
+      - name: Build installer
         shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path release | Out-Null
-          Compress-Archive `
-            -Path dist/obs-plugin/browser-relay-audio/obs-plugins/64bit/browser-relay-audio.dll `
-            -DestinationPath release/OBS-RelayAudio-${{ github.ref_name }}-windows.zip `
-            -Force
+        run: >
+          powershell -NoProfile -ExecutionPolicy Bypass
+          -File scripts/build-installer.ps1
+          -InstallerName "OBS-RelayAudio-${{ github.ref_name }}-setup.exe"
 
       - name: Publish release assets
         uses: softprops/action-gh-release@v2
@@ -55,6 +53,6 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           files: |
-            release/OBS-RelayAudio-${{ github.ref_name }}-windows.zip
+            release/OBS-RelayAudio-${{ github.ref_name }}-setup.exe
             dist/obs-plugin/browser-relay-audio/obs-plugins/64bit/browser-relay-audio.dll
           generate_release_notes: true

@@ -40,14 +40,12 @@ jobs:
         shell: pwsh
         run: npm run build:obs-plugin
 
-      - name: Package dev release zip
+      - name: Build installer
         shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path release | Out-Null
-          Compress-Archive `
-            -Path dist/obs-plugin/browser-relay-audio/obs-plugins/64bit/browser-relay-audio.dll `
-            -DestinationPath release/OBS-RelayAudio-dev-release-windows.zip `
-            -Force
+        run: >
+          powershell -NoProfile -ExecutionPolicy Bypass
+          -File scripts/build-installer.ps1
+          -InstallerName "OBS-RelayAudio-dev-release-setup.exe"
 
       - name: Publish dev release
         uses: softprops/action-gh-release@v2
@@ -58,6 +56,6 @@ jobs:
           prerelease: true
           make_latest: false
           files: |
-            release/OBS-RelayAudio-dev-release-windows.zip
+            release/OBS-RelayAudio-dev-release-setup.exe
             dist/obs-plugin/browser-relay-audio/obs-plugins/64bit/browser-relay-audio.dll
           generate_release_notes: true

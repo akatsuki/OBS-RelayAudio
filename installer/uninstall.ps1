@@ -1,22 +1,8 @@
-param(
-  [string]$ObsRoot,
-
-  [string]$PluginName = "browser-relay-audio"
-)
-
 $ErrorActionPreference = "Stop"
 
-function Resolve-ObsRoot {
-  param([string]$RequestedRoot)
+$PluginName = "browser-relay-audio"
 
-  if ($RequestedRoot) {
-    if (-not (Test-Path -LiteralPath $RequestedRoot)) {
-      throw "OBS root not found: $RequestedRoot"
-    }
-
-    return (Resolve-Path -LiteralPath $RequestedRoot).Path
-  }
-
+function Get-ObsRoot {
   $candidateRoots = @(
     (Join-Path $env:ProgramFiles "obs-studio"),
     (Join-Path ${env:ProgramFiles(x86)} "obs-studio")
@@ -26,12 +12,12 @@ function Resolve-ObsRoot {
     return (Resolve-Path -LiteralPath $candidateRoots[0]).Path
   }
 
-  throw "OBS install root not found. Pass -ObsRoot 'C:\Program Files\obs-studio'."
+  throw "OBS install root not found."
 }
 
-$resolvedObsRoot = Resolve-ObsRoot -RequestedRoot $ObsRoot
-$pluginBinDir = Join-Path $resolvedObsRoot "obs-plugins\64bit"
-$pluginDataDir = Join-Path $resolvedObsRoot "data\obs-plugins\$PluginName"
+$obsRoot = Get-ObsRoot
+$pluginBinDir = Join-Path $obsRoot "obs-plugins\64bit"
+$pluginDataDir = Join-Path $obsRoot "data\obs-plugins\$PluginName"
 $pluginDllPath = Join-Path $pluginBinDir "browser-relay-audio.dll"
 
 if (Test-Path -LiteralPath $pluginDllPath) {

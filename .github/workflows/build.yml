@@ -1,7 +1,6 @@
 name: build
 
 on:
-  push:
   pull_request:
     branches:
       - main
@@ -40,6 +39,10 @@ jobs:
       - name: Build plugin
         shell: pwsh
         run: npm run build:obs-plugin
+
+      - name: Build installer
+        shell: pwsh
+        run: npm run build:installer
 
       - name: Upload staged DLL
         uses: actions/upload-artifact@v4

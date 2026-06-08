@@ -23,8 +23,8 @@ audio into OBS.
 ## Automation
 
 - Pushes to `main` build the Windows plugin and upload the staged DLL as a GitHub Actions artifact.
-- Pushes to `main` also publish a `dev-release` prerelease with the latest beta build assets.
-- Tag pushes that match `v*` build the plugin, package the DLL, and publish the zip plus DLL as GitHub Release assets.
+- Pushes to `main` also publish a `dev-release` prerelease with the latest beta installer and DLL assets.
+- Tag pushes that match `v*` build the plugin, package a Windows installer EXE, and publish the installer plus DLL as GitHub Release assets.
 
 ## Build
 
@@ -32,6 +32,12 @@ Run:
 
 ```powershell
 npm run build:obs-plugin
+```
+
+To build the Windows installer EXE after the plugin DLL is staged, run:
+
+```powershell
+npm run build:installer
 ```
 
 The build script downloads the OBS Studio source archive, generates the
@@ -52,6 +58,10 @@ Copy the staged DLL into the OBS installation or let the BrowserRelayStreamer
 app package and install it from its bundled resources. The source property
 defaults to `127.0.0.1:<port>`, but the port can be changed to match the app
 setting.
+
+For end users, the GitHub release also publishes a Windows installer EXE that
+copies the DLL into OBS and drops the uninstall script into the plugin data
+folder.
 
 ## Uninstall
 

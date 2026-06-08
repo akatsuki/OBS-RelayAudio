@@ -5,7 +5,8 @@
   "description": "OBS audio bridge plugin for BrowserRelayStreamer.",
   "scripts": {
     "build:obs-plugin": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-obs-plugin.ps1",
+    "build:installer": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-installer.ps1",
     "build": "npm run build:obs-plugin",
-    "clean": "powershell -NoProfile -Command \"Remove-Item -Recurse -Force build,dist -ErrorAction SilentlyContinue\""
+    "clean": "powershell -NoProfile -Command \"Remove-Item -Recurse -Force build,dist,release -ErrorAction SilentlyContinue\""
   }
 }
