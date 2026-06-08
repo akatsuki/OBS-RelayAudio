@@ -100,7 +100,16 @@ if (-not (Test-Path -LiteralPath $iexpressExe)) {
 Write-SedFile -Path $SedPath -TargetName $tempOutputPath -SourceDir $StageDir
 
 & $iexpressExe /N /Q $SedPath
-if ($LASTEXITCODE -ne 0 -and -not (Test-Path -LiteralPath $tempOutputPath)) {
+if (-not (Test-Path -LiteralPath $tempOutputPath)) {
+  for ($i = 0; $i -lt 20; $i++) {
+    Start-Sleep -Milliseconds 250
+    if (Test-Path -LiteralPath $tempOutputPath) {
+      break
+    }
+  }
+}
+
+if (-not (Test-Path -LiteralPath $tempOutputPath)) {
   throw "IExpress failed with exit code $LASTEXITCODE"
 }
 
