@@ -21,6 +21,8 @@ namespace {
 
 constexpr const char *kSourceId = "browser_relay_audio_bridge";
 constexpr const char *kSourceName = "RelayAudio Audio Bridge";
+constexpr const char *kDefaultHost = "127.0.0.1";
+constexpr int kDefaultPort = 47631;
 constexpr uint16_t kProtocolVersion = 1;
 constexpr uint16_t kFormatFloat32Interleaved = 1;
 
@@ -40,8 +42,8 @@ struct BrsAudioPacketHeader {
 
 struct BridgeSource {
   obs_source_t *source = nullptr;
-  std::string host = "127.0.0.1";
-  int port = 47631;
+  std::string host = kDefaultHost;
+  int port = kDefaultPort;
   std::mutex configMutex;
   std::atomic<bool> running{true};
 #ifdef _WIN32
@@ -208,14 +210,26 @@ void bridge_destroy(void *data) {
 }
 
 void bridge_defaults(obs_data_t *settings) {
-  obs_data_set_default_string(settings, "host", "127.0.0.1");
-  obs_data_set_default_int(settings, "port", 47631);
+  obs_data_set_default_string(settings, "host", kDefaultHost);
+  obs_data_set_default_int(settings, "port", kDefaultPort);
 }
 
-obs_properties_t *bridge_properties(void *) {
+bool bridge_reset_defaults(obs_properties_t *, obs_property_t *, void *data) {
+  auto *context = static_cast<BridgeSource *>(data);
+  obs_data_t *settings = obs_data_create();
+  obs_data_set_string(settings, "host", kDefaultHost);
+  obs_data_set_int(settings, "port", kDefaultPort);
+  obs_source_reset_settings(context->source, settings);
+  obs_data_release(settings);
+  return false;
+}
+
+obs_properties_t *bridge_properties(void *data) {
   obs_properties_t *props = obs_properties_create();
   obs_properties_add_text(props, "host", "Host", OBS_TEXT_DEFAULT);
   obs_properties_add_int(props, "port", "Port", 1, 65535, 1);
+  obs_properties_add_button2(props, "reset_defaults", "デフォルトに戻す",
+                             bridge_reset_defaults, data);
   return props;
 }
 
