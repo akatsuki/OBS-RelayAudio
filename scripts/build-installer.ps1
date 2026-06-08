@@ -22,8 +22,17 @@ function Write-SedFile {
     [Parameter(Mandatory = $true)]
     [string]$TargetName,
     [Parameter(Mandatory = $true)]
-    [string]$SourceDir
+    [string]$SourceDir,
+    [Parameter(Mandatory = $true)]
+    [string[]]$RelativeFiles
   )
+
+  $fileStringLines = New-Object System.Collections.Generic.List[string]
+  $sourceFileLines = New-Object System.Collections.Generic.List[string]
+  for ($i = 0; $i -lt $RelativeFiles.Count; $i++) {
+    $fileStringLines.Add("FILE$i=$($RelativeFiles[$i])")
+    $sourceFileLines.Add("%FILE$i%=")
+  }
 
   $content = @"
 [Version]
@@ -61,27 +70,42 @@ AppLaunched=install.cmd
 PostInstallCmd=<None>
 AdminQuietInstCmd=
 UserQuietInstCmd=
-FILE0=install.cmd
-FILE1=install.ps1
-FILE2=uninstall.ps1
-FILE3=browser-relay-audio.dll
+$($fileStringLines -join "`r`n")
 
 [SourceFiles]
 SourceFiles0=$SourceDir
 
 [SourceFiles0]
-%FILE0%=
-%FILE1%=
-%FILE2%=
-%FILE3%=
+$($sourceFileLines -join "`r`n")
 "@
 
   Set-Content -LiteralPath $Path -Value $content -Encoding ASCII
 }
 
+function Get-RelativeStagePath {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$BaseDir,
+    [Parameter(Mandatory = $true)]
+    [string]$FullPath
+  )
+
+  $resolvedBase = (Resolve-Path -LiteralPath $BaseDir).Path.TrimEnd('\') + '\'
+  $resolvedFull = (Resolve-Path -LiteralPath $FullPath).Path
+
+  if ($resolvedFull.StartsWith($resolvedBase, [System.StringComparison]::OrdinalIgnoreCase)) {
+    return $resolvedFull.Substring($resolvedBase.Length)
+  }
+
+  return Split-Path -Leaf $resolvedFull
+}
+
 if (-not (Test-Path -LiteralPath $sourceDll)) {
   throw "Built plugin DLL not found at $sourceDll"
 }
+
+Remove-Item -LiteralPath $StageDir -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $TempOutputDir -Recurse -Force -ErrorAction SilentlyContinue
 
 New-Item -ItemType Directory -Force -Path $StageDir | Out-Null
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
@@ -93,11 +117,20 @@ Copy-Item -LiteralPath (Join-Path $installerDir "install.ps1") -Destination (Joi
 Copy-Item -LiteralPath (Join-Path $installerDir "uninstall.ps1") -Destination (Join-Path $StageDir "uninstall.ps1") -Force
 Copy-Item -LiteralPath $sourceDll -Destination (Join-Path $StageDir "browser-relay-audio.dll") -Force
 
+$distDataDir = Join-Path $repoRoot "dist\obs-plugin\browser-relay-audio\data"
+if (Test-Path -LiteralPath $distDataDir) {
+  Copy-Item -LiteralPath $distDataDir -Destination $StageDir -Recurse -Force
+}
+
+$relativeFiles = Get-ChildItem -LiteralPath $StageDir -File -Recurse | ForEach-Object {
+  Get-RelativeStagePath -BaseDir $StageDir -FullPath $_.FullName
+} | Sort-Object
+
 if (-not (Test-Path -LiteralPath $iexpressExe)) {
   throw "IExpress not found at $iexpressExe"
 }
 
-Write-SedFile -Path $SedPath -TargetName $tempOutputPath -SourceDir $StageDir
+Write-SedFile -Path $SedPath -TargetName $tempOutputPath -SourceDir $StageDir -RelativeFiles $relativeFiles
 
 & $iexpressExe /N /Q $SedPath
 if (-not (Test-Path -LiteralPath $tempOutputPath)) {

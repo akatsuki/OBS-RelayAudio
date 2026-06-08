@@ -55,7 +55,7 @@ struct BridgeSource {
 obs_source_info bridge_source_info = {};
 
 const char *bridge_get_name(void *) {
-  return kSourceName;
+  return obs_module_text("SourceName");
 }
 
 bool recv_exact(SOCKET socket, void *buffer, int bytes) {
@@ -226,9 +226,9 @@ bool bridge_reset_defaults(obs_properties_t *, obs_property_t *, void *data) {
 
 obs_properties_t *bridge_properties(void *data) {
   obs_properties_t *props = obs_properties_create();
-  obs_properties_add_text(props, "host", "Host", OBS_TEXT_DEFAULT);
-  obs_properties_add_int(props, "port", "Port", 1, 65535, 1);
-  obs_properties_add_button2(props, "reset_defaults", "Reset to default", bridge_reset_defaults, data);
+  obs_properties_add_text(props, "host", obs_module_text("Host"), OBS_TEXT_DEFAULT);
+  obs_properties_add_int(props, "port", obs_module_text("Port"), 1, 65535, 1);
+  obs_properties_add_button2(props, "reset_defaults", obs_module_text("ResetToDefault"), bridge_reset_defaults, data);
   return props;
 }
 

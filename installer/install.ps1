@@ -30,6 +30,8 @@ function Invoke-Install {
     [Parameter(Mandatory = $true)]
     [string]$UninstallScriptSource,
     [Parameter(Mandatory = $true)]
+    [string]$PluginDataSource,
+    [Parameter(Mandatory = $true)]
     [string]$ObsRoot
   )
 
@@ -43,6 +45,10 @@ function Invoke-Install {
 
   Copy-Item -LiteralPath $resolvedDll -Destination $destinationDll -Force
   Copy-Item -LiteralPath $UninstallScriptSource -Destination (Join-Path $pluginDataDir "uninstall.ps1") -Force
+
+  if (Test-Path -LiteralPath $PluginDataSource) {
+    Get-ChildItem -LiteralPath $PluginDataSource -Force | Copy-Item -Destination $pluginDataDir -Recurse -Force
+  }
 
   [System.Windows.Forms.MessageBox]::Show(
     "Installed OBS RelayAudio to:`n$destinationDll",
@@ -75,6 +81,7 @@ if (-not (Test-Administrator)) {
 $scriptDir = Split-Path -Parent $PSCommandPath
 $pluginDllPath = Join-Path $scriptDir "browser-relay-audio.dll"
 $uninstallScriptSource = Join-Path $scriptDir "uninstall.ps1"
+$pluginDataSource = Join-Path $scriptDir "data\obs-plugins\$PluginName"
 $obsRoot = Get-ObsRoot
 
 if (-not (Test-Path -LiteralPath $pluginDllPath)) {
@@ -90,7 +97,7 @@ $choice = [System.Windows.Forms.MessageBox]::Show(
 
 switch ($choice) {
   "Yes" {
-    Invoke-Install -PluginDllPath $pluginDllPath -UninstallScriptSource $uninstallScriptSource -ObsRoot $obsRoot
+    Invoke-Install -PluginDllPath $pluginDllPath -UninstallScriptSource $uninstallScriptSource -PluginDataSource $pluginDataSource -ObsRoot $obsRoot
   }
   "No" {
     Invoke-Uninstall -UninstallScriptPath $uninstallScriptSource

@@ -6,7 +6,9 @@ param(
 
   [string]$PluginName = "browser-relay-audio",
 
-  [string]$UninstallScriptPath
+  [string]$UninstallScriptPath,
+
+  [string]$PluginDataSource
 )
 
 $ErrorActionPreference = "Stop"
@@ -40,6 +42,8 @@ if (-not (Test-Path -LiteralPath $PluginDllPath)) {
 
 $resolvedDll = (Resolve-Path -LiteralPath $PluginDllPath).Path
 $resolvedObsRoot = Resolve-ObsRoot -RequestedRoot $ObsRoot
+$scriptDir = Split-Path -Parent $PSCommandPath
+$resolvedPluginDataSource = if ($PluginDataSource) { $PluginDataSource } else { Join-Path $scriptDir "data\obs-plugins\$PluginName" }
 
 $pluginBinDir = Join-Path $resolvedObsRoot "obs-plugins\64bit"
 $pluginDataDir = Join-Path $resolvedObsRoot "data\obs-plugins\$PluginName"
@@ -49,6 +53,10 @@ New-Item -ItemType Directory -Force -Path $pluginBinDir | Out-Null
 New-Item -ItemType Directory -Force -Path $pluginDataDir | Out-Null
 
 Copy-Item -LiteralPath $resolvedDll -Destination $destinationDll -Force
+
+if ($resolvedPluginDataSource -and (Test-Path -LiteralPath $resolvedPluginDataSource)) {
+  Get-ChildItem -LiteralPath $resolvedPluginDataSource -Force | Copy-Item -Destination $pluginDataDir -Recurse -Force
+}
 
 if ($UninstallScriptPath) {
   $resolvedUninstallScript = (Resolve-Path -LiteralPath $UninstallScriptPath).Path
