@@ -48,9 +48,15 @@ function Invoke-Install {
 
   if (Test-Path -LiteralPath $PluginDataSource) {
     Get-ChildItem -LiteralPath $PluginDataSource -Force | Copy-Item -Destination $pluginDataDir -Recurse -Force
-  } elseif (Test-Path -LiteralPath (Join-Path $scriptDir "en-US.ini")) {
-    New-Item -ItemType Directory -Force -Path (Join-Path $pluginDataDir "locale") | Out-Null
-    Copy-Item -LiteralPath (Join-Path $scriptDir "en-US.ini") -Destination (Join-Path $pluginDataDir "locale\en-US.ini") -Force
+  } else {
+    $localeDir = Join-Path $pluginDataDir "locale"
+    $stageLocales = Get-ChildItem -LiteralPath $scriptDir -Filter "*.ini" -File -ErrorAction SilentlyContinue
+    if ($stageLocales) {
+      New-Item -ItemType Directory -Force -Path $localeDir | Out-Null
+      foreach ($localeFile in $stageLocales) {
+        Copy-Item -LiteralPath $localeFile.FullName -Destination (Join-Path $localeDir $localeFile.Name) -Force
+      }
+    }
   }
 
   [System.Windows.Forms.MessageBox]::Show(

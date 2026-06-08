@@ -117,9 +117,9 @@ Copy-Item -LiteralPath (Join-Path $installerDir "install.ps1") -Destination (Joi
 Copy-Item -LiteralPath (Join-Path $installerDir "uninstall.ps1") -Destination (Join-Path $StageDir "uninstall.ps1") -Force
 Copy-Item -LiteralPath $sourceDll -Destination (Join-Path $StageDir "browser-relay-audio.dll") -Force
 
-$localeSource = Join-Path $repoRoot "dist\obs-plugin\browser-relay-audio\data\obs-plugins\browser-relay-audio\locale\en-US.ini"
-if (Test-Path -LiteralPath $localeSource) {
-  Copy-Item -LiteralPath $localeSource -Destination (Join-Path $StageDir "en-US.ini") -Force
+$localeSourceDir = Join-Path $repoRoot "dist\obs-plugin\browser-relay-audio\data\obs-plugins\browser-relay-audio\locale"
+if (Test-Path -LiteralPath $localeSourceDir) {
+  Get-ChildItem -LiteralPath $localeSourceDir -Filter "*.ini" -File | Copy-Item -Destination $StageDir -Force
 }
 
 $relativeFiles = Get-ChildItem -LiteralPath $StageDir -File -Recurse | ForEach-Object {
