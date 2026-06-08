@@ -60,8 +60,8 @@ defaults to `127.0.0.1:<port>`, but the port can be changed to match the app
 setting.
 
 For end users, the GitHub release also publishes a Windows installer EXE that
-copies the DLL into OBS and drops the uninstall script into the plugin data
-folder.
+shows a dialog with install and uninstall choices, copies the DLL into OBS, and
+drops the uninstall script into the plugin data folder.
 
 ## Uninstall
 

@@ -2,6 +2,8 @@ $ErrorActionPreference = "Stop"
 
 $PluginName = "browser-relay-audio"
 
+Add-Type -AssemblyName System.Windows.Forms
+
 function Test-Administrator {
   $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
   $principal = New-Object Security.Principal.WindowsPrincipal($identity)
@@ -19,6 +21,44 @@ function Get-ObsRoot {
   }
 
   throw "OBS install root not found."
+}
+
+function Invoke-Install {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$PluginDllPath,
+    [Parameter(Mandatory = $true)]
+    [string]$UninstallScriptSource,
+    [Parameter(Mandatory = $true)]
+    [string]$ObsRoot
+  )
+
+  $resolvedDll = (Resolve-Path -LiteralPath $PluginDllPath).Path
+  $pluginBinDir = Join-Path $ObsRoot "obs-plugins\64bit"
+  $pluginDataDir = Join-Path $ObsRoot "data\obs-plugins\$PluginName"
+  $destinationDll = Join-Path $pluginBinDir (Split-Path -Leaf $resolvedDll)
+
+  New-Item -ItemType Directory -Force -Path $pluginBinDir | Out-Null
+  New-Item -ItemType Directory -Force -Path $pluginDataDir | Out-Null
+
+  Copy-Item -LiteralPath $resolvedDll -Destination $destinationDll -Force
+  Copy-Item -LiteralPath $UninstallScriptSource -Destination (Join-Path $pluginDataDir "uninstall.ps1") -Force
+
+  [System.Windows.Forms.MessageBox]::Show(
+    "Installed OBS RelayAudio to:`n$destinationDll",
+    "OBS RelayAudio",
+    [System.Windows.Forms.MessageBoxButtons]::OK,
+    [System.Windows.Forms.MessageBoxIcon]::Information
+  ) | Out-Null
+}
+
+function Invoke-Uninstall {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$UninstallScriptPath
+  )
+
+  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $UninstallScriptPath
 }
 
 if (-not (Test-Administrator)) {
@@ -41,16 +81,21 @@ if (-not (Test-Path -LiteralPath $pluginDllPath)) {
   throw "Plugin DLL not found: $pluginDllPath"
 }
 
-$resolvedDll = (Resolve-Path -LiteralPath $pluginDllPath).Path
-$pluginBinDir = Join-Path $obsRoot "obs-plugins\64bit"
-$pluginDataDir = Join-Path $obsRoot "data\obs-plugins\$PluginName"
-$destinationDll = Join-Path $pluginBinDir (Split-Path -Leaf $resolvedDll)
+$choice = [System.Windows.Forms.MessageBox]::Show(
+  "Choose an action for OBS RelayAudio.`n`nYes = Install`nNo = Uninstall`nCancel = Exit",
+  "OBS RelayAudio",
+  [System.Windows.Forms.MessageBoxButtons]::YesNoCancel,
+  [System.Windows.Forms.MessageBoxIcon]::Question
+)
 
-New-Item -ItemType Directory -Force -Path $pluginBinDir | Out-Null
-New-Item -ItemType Directory -Force -Path $pluginDataDir | Out-Null
-
-Copy-Item -LiteralPath $resolvedDll -Destination $destinationDll -Force
-Copy-Item -LiteralPath $uninstallScriptSource -Destination (Join-Path $pluginDataDir "uninstall.ps1") -Force
-
-Write-Host "Installed OBS plugin DLL to $destinationDll"
-Write-Host "Installed uninstall script to $pluginDataDir"
+switch ($choice) {
+  "Yes" {
+    Invoke-Install -PluginDllPath $pluginDllPath -UninstallScriptSource $uninstallScriptSource -ObsRoot $obsRoot
+  }
+  "No" {
+    Invoke-Uninstall -UninstallScriptPath $uninstallScriptSource
+  }
+  default {
+    exit 0
+  }
+}
