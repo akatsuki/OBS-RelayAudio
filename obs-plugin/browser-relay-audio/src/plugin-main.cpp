@@ -1,4 +1,4 @@
-#include <obs-module.h>
+﻿#include <obs-module.h>
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -228,8 +228,7 @@ obs_properties_t *bridge_properties(void *data) {
   obs_properties_t *props = obs_properties_create();
   obs_properties_add_text(props, "host", "Host", OBS_TEXT_DEFAULT);
   obs_properties_add_int(props, "port", "Port", 1, 65535, 1);
-  obs_properties_add_button2(props, "reset_defaults", "デフォルトに戻す",
-                             bridge_reset_defaults, data);
+  obs_properties_add_button2(props, "reset_defaults", "Reset to default", bridge_reset_defaults, data);
   return props;
 }
 
@@ -250,3 +249,5 @@ bool obs_module_load(void) {
   blog(LOG_INFO, "[BRS audio] loaded");
   return true;
 }
+
+

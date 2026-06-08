@@ -1,7 +1,7 @@
 {
   "name": "obs-relay-audio",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "OBS audio bridge plugin for BrowserRelayStreamer.",
   "scripts": {
     "build:obs-plugin": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-obs-plugin.ps1",
